@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 
 docker run --rm \
   -v "$(realpath .):/app" \
