@@ -98,7 +98,7 @@ endif
 # Enabling debug PRINTF
 DEBUG ?= 0
 ifneq ($(DEBUG),0)
-
+        $(info >>> DEBUG is enabled <<<)
         DEFINES += NERVOS_DEBUG
         DEFINES += STACK_MEASURE
 
