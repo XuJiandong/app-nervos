@@ -11,6 +11,7 @@ void clear_apdu_globals(void);
 void init_globals(void);
 
 #define MAX_APDU_SIZE 230 // Maximum number of bytes in a single APDU
+#define MAX_LOCK_ARGS_SIZE 128 // Maximum size of user defined lock script args
 
 // Our buffer must accommodate any remainder from hashing and the next message at once.
 #define NERVOS_BUFSIZE (BLAKE2B_BLOCKBYTES + MAX_APDU_SIZE)
@@ -48,12 +49,12 @@ typedef struct {
 typedef struct {
     uint64_t capacity;
     uint8_t dao_data_is_nonzero;
-    uint8_t lock_arg_index : 5;
+    uint8_t lock_arg_index;
     uint8_t data_size : 4;
     uint8_t active : 1;
     uint8_t is_dao : 1;
-    uint8_t is_multisig : 1;
     uint8_t lock_arg_nonequal : 1;
+    uint8_t address_cat : 4;
 } cell_state_t;
 
 typedef struct {
@@ -107,6 +108,13 @@ typedef struct {
     uint32_t distinct_input_sources; // distinct input lock_args
 
     cell_state_t cell_state;
+    // It is possible that we can send CKB to any address that in not default lock or multisig, e.g. omnilock, joyID, etc.
+    // Memory optimization: Only store the first output cell's lock script since it's the only one from payees
+    struct {
+        uint8_t code_hash[32];
+        uint8_t hash_type;
+        uint8_t args[MAX_LOCK_ARGS_SIZE];
+    } first_output_lock;
 
     _Alignas(uint32_t) uint8_t transaction_stack[240];
     // struct AnnotatedTransaction_state transaction_stack; - not just replacing because the "headers" are badly formed.

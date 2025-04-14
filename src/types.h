@@ -171,7 +171,7 @@ typedef union {
 struct output_t {
 	uint64_t capacity;
 	lock_arg_t destination;
-  uint8_t is_multisig : 1;
+    uint8_t address_cat;
 };
 
 // Have we found an output cell which doesn't correspond to the change
@@ -220,6 +220,17 @@ typedef enum {
 	ADDRESS_MAINNET=0,
 	ADDRESS_TESTNET
 } address_type_t;
+
+typedef enum {
+    // locked by https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0024-ckb-genesis-script-list/0024-ckb-genesis-script-list.md#secp256k1blake160
+    ADDRESS_CAT_DEFAULT,
+    // locked by https://github.com/nervosnetwork/rfcs/blob/master/rfcs/0024-ckb-genesis-script-list/0024-ckb-genesis-script-list.md#secp256k1multisig
+    ADDRESS_CAT_MULTISIG,
+    // locked by https://github.com/nervosnetwork/ckb-system-scripts/pull/99
+    ADDRESS_CAT_MULTISIGV2,
+    // Others, e.g. omnilock, joyID, etc.
+    ADDRESS_CAT_OTHERS,
+} address_cat_t;
 
 typedef enum {
   SIGN_HASH_OFF=0,

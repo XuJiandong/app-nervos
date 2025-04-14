@@ -148,7 +148,7 @@ const createSudtTx = {
       {
         "capacity": "000000034e62ce00",
         "lock": {
-          "code_hash": "86a1c6987a4acbe1a887cca4c9dd2ac9fcb07405bbeda51b861b18bbf7492c4b",
+          "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
           "hash_type": 1,
           "args": "632c444199275d00b7c1fb65bf001d70bc609599"
         },
