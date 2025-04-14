@@ -52,3 +52,5 @@ void bin_to_base58(char *const out, size_t const out_size, uint8_t const *const 
 void buffer_to_base58(char *const out, size_t const out_size, buffer_t const *const in);
 
 void uint64_tuple_to_string(char *const out, size_t const out_size, uint64_tuple_t const *const tuple);
+
+void first_output_lock_to_address(char *const dest, size_t const buff_size, lock_arg_t const *const);

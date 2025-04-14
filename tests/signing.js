@@ -741,6 +741,140 @@ describe("Signing transactions", () => {
 
     await flow.promptsPromise;
   });
+  it("Signing a valid transaction: send to non-genesis lock", async function() {
+    const flow = await flowAccept(this.speculos, [
+      {header:"Confirm", body:"Transaction"},
+      {header:"Amount", body:"1400"},
+      {header:"Fee", body:"0.001"},
+      {header:"Destination", body:"ckb1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqfk9f54"},
+    ]);
+
+    const signPath = [
+        2147483692,
+        2147483957,
+        2147483648,
+        0,
+        4
+    ];
+
+    const txn = {
+      signPath,
+      "changePath": [
+        2147483692,
+        2147483957,
+        2147483648,
+        1,
+        5
+      ],
+      "inputCount": 1,
+      "raw": {
+        "version": 0,
+        "cell_deps": [
+          {
+            "out_point": {
+              "tx_hash": "01ef8910ef4e71349763523a077eea304b0e852c45b04d5b56c482306f4f6d93",
+              "index": 0
+            },
+            "dep_type": 1
+          }
+        ],
+        "header_deps": [],
+        "inputs": [
+          {
+            "input": {
+              "since": "0000000000000000",
+              "previous_output": {
+                "tx_hash": "f44b26dda9f1f48b20029654be67c2e636b7fec62b877e20b695c2307dae4a52",
+                "index": 0
+              }
+            },
+            "source": {
+              "version": 0,
+              "cell_deps": [
+                {
+                  "out_point": {
+                    "tx_hash": "01ef8910ef4e71349763523a077eea304b0e852c45b04d5b56c482306f4f6d93",
+                    "index": 0
+                  },
+                  "dep_type": 1
+                }
+              ],
+              "header_deps": [],
+              "inputs": [
+                {
+                  "since": "0000000000000000",
+                  "previous_output": {
+                    "tx_hash": "2e4f4999bc2ae5d1bf1964d1fb4fa2d7c9dff014faa0fb4130fcaf053a828b6b",
+                    "index": 1
+                  }
+                }
+              ],
+              "outputs": [
+                {
+                  "capacity": "00000022ecb25c00",
+                  "lock": {
+                    "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+                    "hash_type": 1,
+                    "args": "4c73d21a2cd6501255bf410dcab0265c2ee1fdcb"
+                  },
+                  "type_": null
+                },
+                {
+                  "capacity": "1bc16af3d42320c0",
+                  "lock": {
+                    "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+                    "hash_type": 1,
+                    "args": "cc4e78b857b8ea477304925ac0f67b7348b86761"
+                  },
+                  "type_": null
+                }
+              ],
+              "outputs_data": [
+                "",
+                ""
+              ]
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "capacity": "0000002098a67800",
+            "lock": {
+              "code_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "hash_type": 0,
+              "args": "00000000000000000000000000000000000000000000000000000000000000000000000000000000"
+            },
+            "type_": null
+          },
+          {
+            "capacity": "00000002540a5d60",
+            "lock": {
+              "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+              "hash_type": 1,
+              "args": "622f480dff8731d15c832d2234ee4eded0cfe398"
+            },
+            "type_": null
+          }
+        ],
+        "outputs_data": [
+          "",
+          ""
+        ]
+      },
+      "witnesses": [
+        ""
+      ]
+    };
+
+    const sig = await this.ckb.signAnnotatedTransaction(txn);
+    const key = await getKeyFromLedgerCached(this, signPath);
+
+    checkSignature(txn, sig, key);
+
+    await flow.promptsPromise;
+  });
+
+
   it("Signing a valid transaction to multisig address passes (contains two inputs)", async function() {
     const flow = await flowAccept(this.speculos, [
       {header:"Confirm", body:"Transaction"},

@@ -111,6 +111,10 @@ typedef struct {
     // It is possible that we can send CKB to any address that in not default lock or multisig, e.g. omnilock, joyID, etc.
     // Memory optimization: Only store the first output cell's lock script since it's the only one from payees
     struct {
+        uint8_t args_size;
+        // the following data structure is exactly the same layout of payload:
+        // payload = 0x00 | code_hash | hash_type | args
+        uint8_t address_format_type;
         uint8_t code_hash[32];
         uint8_t hash_type;
         uint8_t args[MAX_LOCK_ARGS_SIZE];

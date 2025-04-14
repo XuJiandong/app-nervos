@@ -131,7 +131,19 @@ static void multi_output_prompts_cb(size_t which) {
 static void sign_complete(uint8_t instruction) {
 
     ui_callback_t const ok_c = instruction == INS_SIGN_WITH_HASH ? sign_with_hash_ok : sign_without_hash_ok;
-    void *lock_arg_to_destination_address_cb = G.u.tx.outputs[0].address_cat == ADDRESS_CAT_MULTISIG ? lock_arg_to_multisig_address : lock_arg_to_sighash_address;
+    void *lock_arg_to_destination_address_cb = 0;
+
+    if (G.u.tx.outputs[0].address_cat == ADDRESS_CAT_MULTISIG) {
+        lock_arg_to_destination_address_cb = lock_arg_to_multisig_address;
+    } else if (G.u.tx.outputs[0].address_cat == ADDRESS_CAT_DEFAULT) {
+        lock_arg_to_destination_address_cb = lock_arg_to_sighash_address;
+    } else if (G.u.tx.outputs[0].address_cat == ADDRESS_CAT_OTHERS) {
+        lock_arg_to_destination_address_cb = first_output_lock_to_address;
+    } else if (G.u.tx.outputs[0].address_cat == ADDRESS_CAT_MULTISIGV2) {
+        lock_arg_to_destination_address_cb = first_output_lock_to_address;
+    } else {
+        THROW(EXC_REJECT);
+    }
 
     switch (G.maybe_transaction.v.tag) {
 
@@ -364,9 +376,6 @@ void cell_lock_code_hash(uint8_t* buf, mol_num_t len) {
             G.cell_state.address_cat = ADDRESS_CAT_OTHERS;
             memcpy(G.first_output_lock.code_hash, buf, 32);
         }
-        if (N_data.contract_data_type == DISALLOW_CONTRACT_DATA) {
-            REJECT("The lock script is unsupported");
-        }
     }
 }
 
@@ -375,9 +384,6 @@ void cell_script_hash_type(uint8_t hash_type) {
     if (hash_type != 1) {
         if (G.u.tx.current_output_index == 0) {
             G.first_output_lock.hash_type = hash_type;
-        }
-        if (N_data.contract_data_type == DISALLOW_CONTRACT_DATA) {
-            REJECT("Incorrect hash type for standard lock or dao script");
         }
     }
 }
@@ -400,6 +406,8 @@ void script_arg_chunk(uint8_t *buf, mol_num_t buflen) {
         }
         memcpy(&G.first_output_lock.args + current_offset, buf, buflen);
         G.cell_state.lock_arg_index += buflen;
+        // update size
+        G.first_output_lock.args_size = G.cell_state.lock_arg_index;
     } else {
         uint32_t current_offset = G.cell_state.lock_arg_index;
         if (G.cell_state.lock_arg_index + buflen > 28) { // Unknown arg

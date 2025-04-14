@@ -10,6 +10,7 @@
 #define NO_CONTRACT_NAME_STRING "Custom Delegate: please verify the address"
 
 #define TEZOS_HASH_CHECKSUM_SIZE 4
+#define G global.apdu.u.sign
 
 void pkh_to_string(char *const buff, size_t const buff_size, uint8_t const hash[KEY_HASH_SIZE]);
 
@@ -222,6 +223,14 @@ void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, lock_
     memcpy(&render_address_payload.full_version.hash, lock_arg->hash, sizeof(render_address_payload.full_version.hash));
     render_pkh(dest, buff_size, &render_address_payload, sizeof(render_address_payload.full_version));
 }
+
+void first_output_lock_to_address(char *const dest, size_t const buff_size, lock_arg_t const *const args) {
+    (void)args;
+    const uint8_t* payload = ((uint8_t*)&G.first_output_lock) + 1;
+    size_t payload_size = 1 + 32 + 1 + G.first_output_lock.args_size;
+    render_pkh(dest, buff_size, (const render_address_payload_t*)payload, payload_size);
+}
+
 
 void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock_arg_t const *const lock_arg) {
     render_address_payload_t render_address_payload;
