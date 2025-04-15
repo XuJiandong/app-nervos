@@ -17,7 +17,6 @@ void lookup_parsed_contract_name(char *const buff, size_t const buff_size, publi
 
 /* void lock_arg_to_string(char *const buff, size_t const buff_size, uint8_t const *const contract); */
 void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, lock_arg_t const *const lockarg);
-void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock_arg_t const *const lockarg);
 
 // dest must be at least MAX_INT_DIGITS
 size_t number_to_string(char *const dest, uint64_t number);
@@ -53,4 +52,6 @@ void buffer_to_base58(char *const out, size_t const out_size, buffer_t const *co
 
 void uint64_tuple_to_string(char *const out, size_t const out_size, uint64_tuple_t const *const tuple);
 
-void first_output_lock_to_address(char *const dest, size_t const buff_size, lock_arg_t const *const);
+void first_output_lock_to_address(char *const dest, size_t const buff_size, const void* args);
+void lock_to_sighash_address(char *const dest, size_t const buff_size, const output_t* output);
+void lock_to_multisig_address(char *const dest, size_t const buff_size, const output_t* output);

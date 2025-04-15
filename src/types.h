@@ -168,11 +168,11 @@ typedef union {
     } code_hash_data_or_type; // code_hash_data or code_hash_type
 } render_address_payload_t;
 
-struct output_t {
+typedef struct output_t {
 	uint64_t capacity;
 	lock_arg_t destination;
     uint8_t address_cat;
-};
+} output_t;
 
 // Have we found an output cell which doesn't correspond to the change
 // bip32-path given in the annotation?

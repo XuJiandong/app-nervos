@@ -98,7 +98,7 @@ typedef struct {
 
     standard_lock_arg_t current_lock_arg;
     standard_lock_arg_t change_lock_arg;
-    standard_lock_arg_t dao_cell_owner;
+    output_t dao_cell_owner;
 
     struct maybe_transaction maybe_transaction;
 
@@ -202,6 +202,7 @@ extern globals_t global;
 
 extern const uint8_t defaultLockScript[];
 extern const uint8_t multisigLockScript[];
+extern const uint8_t multisigLockScriptV2[];
 
 extern const uint8_t blake2b_personalization[17];
 

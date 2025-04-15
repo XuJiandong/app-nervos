@@ -3,6 +3,7 @@
 #include "apdu.h"
 #include "keys.h"
 #include "globals.h"
+#include "types.h"
 
 #include <string.h>
 
@@ -224,43 +225,66 @@ void lock_arg_to_sighash_address(char *const dest, size_t const buff_size, lock_
     render_pkh(dest, buff_size, &render_address_payload, sizeof(render_address_payload.full_version));
 }
 
-void first_output_lock_to_address(char *const dest, size_t const buff_size, lock_arg_t const *const args) {
+void lock_to_sighash_address(char *const dest, size_t const buff_size, const output_t* output) {
+    render_address_payload_t render_address_payload;
+    render_address_payload.full_version.address_format_type = ADDRESS_FORMAT_TYPE_FULL_VERSION;
+    memcpy(&render_address_payload.full_version.code_hash, defaultLockScript,
+           sizeof(render_address_payload.full_version.code_hash));
+    render_address_payload.full_version.hash_type = 1;
+
+    memcpy(&render_address_payload.full_version.hash, output->destination.hash, sizeof(render_address_payload.full_version.hash));
+    render_pkh(dest, buff_size, &render_address_payload, sizeof(render_address_payload.full_version));
+}
+
+void first_output_lock_to_address(char *const dest, size_t const buff_size, const void* args) {
     (void)args;
     const uint8_t* payload = ((uint8_t*)&G.first_output_lock) + 1;
     size_t payload_size = 1 + 32 + 1 + G.first_output_lock.args_size;
     render_pkh(dest, buff_size, (const render_address_payload_t*)payload, payload_size);
 }
 
-
-void lock_arg_to_multisig_address(char *const dest, size_t const buff_size, lock_arg_t const *const lock_arg) {
+void lock_to_multisig_address(char *const dest, size_t const buff_size, const output_t* output) {
     render_address_payload_t render_address_payload;
     size_t payload_len = 0;
     bool has_timelock = false;
     for (int i = 0; i < 8; i++) {
-        if (lock_arg->lock_period[i] != 0) {
+        if (output->destination.lock_period[i] != 0) {
             has_timelock = true;
             break;
         }
     }
+    const uint8_t* code_hash = multisigLockScript;
+    uint8_t hash_type = 1;
+    if (output->address_cat == ADDRESS_CAT_MULTISIG) {
+        code_hash = multisigLockScript;
+        hash_type = 1;
+    } else if (output->address_cat == ADDRESS_CAT_MULTISIGV2) {
+        code_hash = multisigLockScriptV2;
+        hash_type = 1;
+    } else {
+        THROW(EXC_WRONG_PARAM);
+    }
+
     if (has_timelock) {
         render_address_payload.code_hash_data_or_type.address_format_type = ADDRESS_FORMAT_TYPE_FULL_VERSION;
-        memcpy(&render_address_payload.code_hash_data_or_type.code_hash, multisigLockScript,
+        memcpy(&render_address_payload.code_hash_data_or_type.code_hash, code_hash,
                sizeof(render_address_payload.code_hash_data_or_type.code_hash));
-        render_address_payload.code_hash_data_or_type.hash_type = 1;
-        memcpy(&render_address_payload.code_hash_data_or_type.lock_arg, lock_arg, sizeof(render_address_payload.code_hash_data_or_type.lock_arg));
+        render_address_payload.code_hash_data_or_type.hash_type = hash_type;
+        memcpy(&render_address_payload.code_hash_data_or_type.lock_arg, &output->destination, sizeof(render_address_payload.code_hash_data_or_type.lock_arg));
         payload_len = sizeof(render_address_payload.code_hash_data_or_type);
     } else {
         render_address_payload.full_version.address_format_type = ADDRESS_FORMAT_TYPE_FULL_VERSION;
-        memcpy(&render_address_payload.full_version.code_hash, multisigLockScript,
+        memcpy(&render_address_payload.full_version.code_hash, code_hash,
                sizeof(render_address_payload.full_version.code_hash));
-        render_address_payload.full_version.hash_type = 1;
-        memcpy(&render_address_payload.full_version.hash, lock_arg->hash,
+        render_address_payload.full_version.hash_type = hash_type;
+        memcpy(&render_address_payload.full_version.hash, output->destination.hash,
                sizeof(render_address_payload.full_version.hash));
         payload_len = sizeof(render_address_payload.full_version);
     }
 
     render_pkh(dest, buff_size, &render_address_payload, payload_len);
 }
+
 
 // (x, h) -> "x of y"
 void uint64_tuple_to_string(char *const dest, size_t const buff_size, uint64_tuple_t const *const tuple) {
