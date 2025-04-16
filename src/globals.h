@@ -11,7 +11,7 @@ void clear_apdu_globals(void);
 void init_globals(void);
 
 #define MAX_APDU_SIZE 230 // Maximum number of bytes in a single APDU
-#define MAX_LOCK_ARGS_SIZE 64 // Maximum size of user defined lock script args
+#define MAX_LOCK_ARGS_SIZE 40 // Maximum size of user defined lock script args
 
 // Our buffer must accommodate any remainder from hashing and the next message at once.
 #define NERVOS_BUFSIZE (BLAKE2B_BLOCKBYTES + MAX_APDU_SIZE)

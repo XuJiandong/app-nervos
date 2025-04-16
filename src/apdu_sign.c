@@ -425,9 +425,9 @@ void script_arg_chunk(uint8_t *buf, mol_num_t buflen) {
     if (G.cell_state.address_cat == ADDRESS_CAT_OTHERS && G.u.tx.current_output_index == 0) {
         uint32_t current_offset = G.cell_state.lock_arg_index;
         if (G.cell_state.lock_arg_index + buflen > MAX_LOCK_ARGS_SIZE) {
-            REJECT("Script args is too long(> 64)");
+            REJECT("Script args is too long(> 40)");
         }
-        memcpy(&G.first_output_lock.args + current_offset, buf, buflen);
+        memcpy(G.first_output_lock.args + current_offset, buf, buflen);
         G.cell_state.lock_arg_index += buflen;
         // update size
         G.first_output_lock.args_size = G.cell_state.lock_arg_index;
