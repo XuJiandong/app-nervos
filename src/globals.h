@@ -11,7 +11,7 @@ void clear_apdu_globals(void);
 void init_globals(void);
 
 #define MAX_APDU_SIZE 230 // Maximum number of bytes in a single APDU
-#define MAX_LOCK_ARGS_SIZE 128 // Maximum size of user defined lock script args
+#define MAX_LOCK_ARGS_SIZE 64 // Maximum size of user defined lock script args
 
 // Our buffer must accommodate any remainder from hashing and the next message at once.
 #define NERVOS_BUFSIZE (BLAKE2B_BLOCKBYTES + MAX_APDU_SIZE)
@@ -202,7 +202,9 @@ extern globals_t global;
 
 extern const uint8_t defaultLockScript[];
 extern const uint8_t multisigLockScript[];
-extern const uint8_t multisigLockScriptV2[];
+
+extern const uint8_t*  get_multisig_v2_code_hash(void);
+extern uint8_t  get_multisig_v2_hash_type(void);
 
 extern const uint8_t blake2b_personalization[17];
 
@@ -244,6 +246,7 @@ void update_baking_idle_screens(void);
 void switch_network();
 void switch_sign_hash();
 void switch_contract_data();
+bool is_mainnet(void);
 
 #ifdef NERVOS_DEBUG
 // Aid for tracking down app crashes

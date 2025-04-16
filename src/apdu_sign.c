@@ -355,7 +355,30 @@ const uint8_t multisigLockScript[] = { 0x5c, 0x50, 0x69, 0xeb, 0x08, 0x57, 0xef,
                                        0x87, 0x6c, 0x87, 0x63, 0x20, 0xfc, 0x96, 0x34, 0xe2, 0xa8 };
 
 // TODO:
-const uint8_t multisigLockScriptV2[32] = { 0xFF };
+const uint8_t multisig_v2_mainnet[32] = {0xFF};
+// https://github.com/nervosnetwork/ckb-system-scripts/pull/99#issuecomment-2757175017
+const uint8_t multisig_v2_testnet[32] = {
+    0x36, 0xc9, 0x71, 0xb8, 0xd4, 0x1f, 0xbd, 0x94,
+    0xaa, 0xbc, 0xa7, 0x7d, 0xc7, 0x5e, 0x82, 0x67,
+    0x29, 0xac, 0x98, 0x44, 0x7b, 0x46, 0xf9, 0x1e,
+    0x00, 0x79, 0x61, 0x55, 0xdd, 0xdb, 0x0d, 0x29
+};
+
+const uint8_t*  get_multisig_v2_code_hash(void) {
+    if (is_mainnet()) {
+        return multisig_v2_mainnet;
+    } else {
+        return multisig_v2_testnet;
+    }
+}
+
+uint8_t get_multisig_v2_hash_type(void) {
+    if (is_mainnet()) {
+        return 2; // data1
+    } else {
+        return 2; // data1
+    }
+}
 
 const uint8_t dao_type_script_hash[] = {0x82, 0xd7, 0x6d, 0x1b, 0x75, 0xfe, 0x2f, 0xd9, 0xa2, 0x7d, 0xfb,
                                         0xaa, 0x65, 0xa0, 0x39, 0x22, 0x1a, 0x38, 0x0d, 0x76, 0xc9, 0x26,
@@ -369,7 +392,7 @@ void cell_lock_code_hash(uint8_t* buf, mol_num_t len) {
         G.cell_state.address_cat = ADDRESS_CAT_DEFAULT;
     } else if (!memcmp(buf, multisigLockScript, 32)) {
         G.cell_state.address_cat = ADDRESS_CAT_MULTISIG;
-    } else if (!memcmp(buf, multisigLockScriptV2, 32)) {
+    } else if (!memcmp(buf, get_multisig_v2_code_hash(), 32)) {
         G.cell_state.address_cat = ADDRESS_CAT_MULTISIGV2;
     } else {
         if (G.u.tx.current_output_index == 0) {
@@ -402,7 +425,7 @@ void script_arg_chunk(uint8_t *buf, mol_num_t buflen) {
     if (G.cell_state.address_cat == ADDRESS_CAT_OTHERS && G.u.tx.current_output_index == 0) {
         uint32_t current_offset = G.cell_state.lock_arg_index;
         if (G.cell_state.lock_arg_index + buflen > MAX_LOCK_ARGS_SIZE) {
-            REJECT("Script args is too long(> 128)");
+            REJECT("Script args is too long(> 64)");
         }
         memcpy(&G.first_output_lock.args + current_offset, buf, buflen);
         G.cell_state.lock_arg_index += buflen;
@@ -510,6 +533,7 @@ void finish_input_cell_data() {
             G.input_amount.fst += G.cell_state.capacity;
         }
         G.signing_multisig_input |= (G.cell_state.address_cat == ADDRESS_CAT_MULTISIG);
+        G.signing_multisig_input |= (G.cell_state.address_cat == ADDRESS_CAT_MULTISIGV2);
     }
 }
 
@@ -585,21 +609,19 @@ void output_start(mol_num_t index) {
 
 // Called per item (tx output in this case)
 void output_end(void) {
-    if(G.cell_state.is_dao) {
+    if (G.cell_state.is_dao) {
         G.dao_cell_owner.address_cat = G.cell_state.address_cat;
         memcpy(G.dao_cell_owner.destination.hash, &G.lock_arg_tmp.hash, sizeof(G.lock_arg_tmp.hash));
         G.u.tx.dao_output_amount += G.cell_state.capacity;
-        G.u.tx.dao_bitmask |= 1<<G.u.tx.current_output_index;
-        if(G.cell_state.lock_arg_nonequal || G.cell_state.address_cat == ADDRESS_CAT_MULTISIG)
-            REJECT("Not allowing DAO outputs to be sent to a non-self address");
+        G.u.tx.dao_bitmask |= 1 << G.u.tx.current_output_index;
+        if (G.cell_state.address_cat != ADDRESS_CAT_MULTISIGV2 && G.cell_state.address_cat != ADDRESS_CAT_DEFAULT)
+            REJECT("DAO outputs is allowed to be sent to default lock or multisigv2");
         G.maybe_transaction.v.flags |= HAS_CHANGE_ADDRESS;
     } else {
         // if the output lock arg doesn't match the change bip-32 path
-        if(G.cell_state.lock_arg_nonequal ||
-            G.cell_state.address_cat == ADDRESS_CAT_MULTISIG ||
-            G.cell_state.address_cat == ADDRESS_CAT_MULTISIGV2 ||
-            G.cell_state.address_cat == ADDRESS_CAT_OTHERS) {
-            if (!(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS) ) {
+        if (G.cell_state.lock_arg_nonequal || G.cell_state.address_cat == ADDRESS_CAT_MULTISIG ||
+            G.cell_state.address_cat == ADDRESS_CAT_MULTISIGV2 || G.cell_state.address_cat == ADDRESS_CAT_OTHERS) {
+            if (!(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS)) {
                 if (G.u.tx.output_count != 0) {
                     // Should be 0 if we haven't seent address yet
                     THROW(EXC_MEMORY_ERROR);
@@ -607,15 +629,18 @@ void output_end(void) {
                 G.u.tx.outputs[0].address_cat = G.cell_state.address_cat;
                 memcpy(&G.u.tx.outputs[0].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
                 G.u.tx.output_count++; // we found the first output
-            } else if(memcmp(G.u.tx.outputs[G.u.tx.output_count-1].destination.hash, G.lock_arg_tmp.hash, 20)
-                      || G.u.tx.outputs[G.u.tx.output_count-1].address_cat != G.cell_state.address_cat) {
+            } else if (memcmp(G.u.tx.outputs[G.u.tx.output_count - 1].destination.hash, G.lock_arg_tmp.hash, 20) ||
+                       G.u.tx.outputs[G.u.tx.output_count - 1].address_cat != G.cell_state.address_cat) {
                 // Not the same as last output, so cannot coalesce and need to
                 // make new prompt / cell in our output array.
-                if(G.maybe_transaction.v.tag != OPERATION_TAG_NOT_SET
-                   && G.maybe_transaction.v.tag != OPERATION_TAG_MULTI_OUTPUT_TRANSFER)
-                    REJECT("Can't handle mixed transaction types with multiple non-change destination addresses. Tag: %d", G.maybe_transaction.v.tag);
+                if (G.maybe_transaction.v.tag != OPERATION_TAG_NOT_SET &&
+                    G.maybe_transaction.v.tag != OPERATION_TAG_MULTI_OUTPUT_TRANSFER)
+                    REJECT(
+                        "Can't handle mixed transaction types with multiple non-change destination addresses. Tag: %d",
+                        G.maybe_transaction.v.tag);
                 G.maybe_transaction.v.tag = OPERATION_TAG_MULTI_OUTPUT_TRANSFER;
-                if(G.u.tx.output_count>=MAX_OUTPUTS) REJECT("Can't handle more than five outputs");
+                if (G.u.tx.output_count >= MAX_OUTPUTS)
+                    REJECT("Can't handle more than five outputs");
                 G.u.tx.outputs[G.u.tx.output_count].address_cat = G.cell_state.address_cat;
                 memcpy(&G.u.tx.outputs[G.u.tx.output_count].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
                 G.u.tx.output_count++;
@@ -627,7 +652,7 @@ void output_end(void) {
             // coalesce and the address is the same, or a new cell, because it
             // wasn't.
             G.u.tx.plain_output_amount += G.cell_state.capacity;
-            G.u.tx.outputs[G.u.tx.output_count - 1].capacity+=G.cell_state.capacity;
+            G.u.tx.outputs[G.u.tx.output_count - 1].capacity += G.cell_state.capacity;
             G.maybe_transaction.v.flags |= HAS_DESTINATION_ADDRESS;
         } else {
             G.u.tx.change_amount += G.cell_state.capacity;
@@ -741,7 +766,6 @@ void finalize_raw_transaction(void) {
         case OPERATION_TAG_DAO_WITHDRAW:
             G.maybe_transaction.v.dao_amount = G.dao_input_amount;
             if(G.u.tx.dao_output_amount != 0) REJECT("Can't mix DAO withdraw and other DAO operations");
-            if(G.u.tx.plain_output_amount != 0) REJECT("DAO withdrawals cannot be sent directly to another account");
             break;
     }
     G.maybe_transaction.v.total_fee = (G.input_amount.snd + G.dao_input_amount) - (G.u.tx.plain_output_amount + G.u.tx.dao_output_amount + G.u.tx.change_amount);

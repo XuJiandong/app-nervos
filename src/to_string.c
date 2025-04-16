@@ -259,8 +259,8 @@ void lock_to_multisig_address(char *const dest, size_t const buff_size, const ou
         code_hash = multisigLockScript;
         hash_type = 1;
     } else if (output->address_cat == ADDRESS_CAT_MULTISIGV2) {
-        code_hash = multisigLockScriptV2;
-        hash_type = 1;
+        code_hash = get_multisig_v2_code_hash();
+        hash_type = get_multisig_v2_hash_type();
     } else {
         THROW(EXC_WRONG_PARAM);
     }

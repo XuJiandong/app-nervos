@@ -82,6 +82,10 @@ void switch_contract_data() {
     nvm_write((void*)&N_data, (void*)&data, sizeof(N_data));
 }
 
+bool is_mainnet() {
+  return (N_data.address_type & ADDRESS_TYPE_MASK) == ADDRESS_MAINNET;
+}
+
 #if defined(TARGET_NANOS)
 _Static_assert(sizeof global <= 2120, "Size of globals_t exceeds the tested working limit");
 #endif
