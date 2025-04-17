@@ -179,7 +179,7 @@ describe("DAO operations", () => {
           {
             "capacity": "000000174876e800",
             "lock": {
-              "code_hash": "ff00000000000000000000000000000000000000000000000000000000000000",
+              "code_hash": "36c971b8d41fbd94aabca77dc75e826729ac98447b46f91e00796155dddb0d29",
               "hash_type": 2,
               "args": "0000000000000000000000000000000000000000"
             },
@@ -310,7 +310,7 @@ describe("DAO operations", () => {
                 {
                   "capacity": "000000174876e800",
                   "lock": {
-                    "code_hash": "ff00000000000000000000000000000000000000000000000000000000000000",
+                    "code_hash": "36c971b8d41fbd94aabca77dc75e826729ac98447b46f91e00796155dddb0d29",
                     "hash_type": 2,
                     "args": "f901ee8ced14138f36c4b597154bd43583925c57"
                   },
@@ -331,7 +331,7 @@ describe("DAO operations", () => {
           {
             "capacity": "000000174876e800",
             "lock": {
-              "code_hash": "ff00000000000000000000000000000000000000000000000000000000000000",
+              "code_hash": "36c971b8d41fbd94aabca77dc75e826729ac98447b46f91e00796155dddb0d29",
               "hash_type": 2,
               "args": "f901ee8ced14138f36c4b597154bd43583925c57"
             },
@@ -358,7 +358,7 @@ describe("DAO operations", () => {
       {header:"Confirm DAO", body:"Withdrawal"},
       {header:"Deposit Amount", body:"1000"},
       {header:"Compensation", body:"2.89011952"},
-      {header:"Cell Owner", body:"ckb1qrlsqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqheq8hgemg5zw8nd394ju25h4p4swf9c4c07djad"},
+      {header:"Cell Owner", body:"ckb1qqmvjudc6s0mm992hjnhm367sfnjntycg3a5d7g7qpukz4wamvxjjqheq8hgemg5zw8nd394ju25h4p4swf9c4cvdw43q"},
     ]);
 
     await this.ckb.signAnnotatedTransaction({
@@ -449,7 +449,7 @@ describe("DAO operations", () => {
                 {
                   "capacity": "000000174876e800",
                   "lock": {
-                    "code_hash": "ff00000000000000000000000000000000000000000000000000000000000000",
+                    "code_hash": "36c971b8d41fbd94aabca77dc75e826729ac98447b46f91e00796155dddb0d29",
                     "hash_type": 2,
                     "args": "f901ee8ced14138f36c4b597154bd43583925c57"
                   },
@@ -480,7 +480,7 @@ describe("DAO operations", () => {
           {
             "capacity": "0000001759b0e0f0",
             "lock": {
-              "code_hash": "ff00000000000000000000000000000000000000000000000000000000000000",
+              "code_hash": "36c971b8d41fbd94aabca77dc75e826729ac98447b46f91e00796155dddb0d29",
               "hash_type": 2,
               "args": "f901ee8ced14138f36c4b597154bd43583925c57"
             },

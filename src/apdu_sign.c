@@ -354,10 +354,9 @@ const uint8_t multisigLockScript[] = { 0x5c, 0x50, 0x69, 0xeb, 0x08, 0x57, 0xef,
                                        0x0c, 0x07, 0xdf, 0x34, 0xc3, 0x16, 0x63, 0xb3, 0x62, 0x2f, 0xd3,
                                        0x87, 0x6c, 0x87, 0x63, 0x20, 0xfc, 0x96, 0x34, 0xe2, 0xa8 };
 
-// TODO:
-const uint8_t multisig_v2_mainnet[32] = {0xFF};
+// since the multisig V2 is deployed as data1 so the mainnet and testnet share same code_hash.
 // https://github.com/nervosnetwork/ckb-system-scripts/pull/99#issuecomment-2757175017
-const uint8_t multisig_v2_testnet[32] = {
+const uint8_t multisig_v2[32] = {
     0x36, 0xc9, 0x71, 0xb8, 0xd4, 0x1f, 0xbd, 0x94,
     0xaa, 0xbc, 0xa7, 0x7d, 0xc7, 0x5e, 0x82, 0x67,
     0x29, 0xac, 0x98, 0x44, 0x7b, 0x46, 0xf9, 0x1e,
@@ -365,19 +364,11 @@ const uint8_t multisig_v2_testnet[32] = {
 };
 
 const uint8_t*  get_multisig_v2_code_hash(void) {
-    if (is_mainnet()) {
-        return multisig_v2_mainnet;
-    } else {
-        return multisig_v2_testnet;
-    }
+    return multisig_v2;
 }
 
 uint8_t get_multisig_v2_hash_type(void) {
-    if (is_mainnet()) {
-        return 2; // data1
-    } else {
-        return 2; // data1
-    }
+    return 2; // data1
 }
 
 const uint8_t dao_type_script_hash[] = {0x82, 0xd7, 0x6d, 0x1b, 0x75, 0xfe, 0x2f, 0xd9, 0xa2, 0x7d, 0xfb,
