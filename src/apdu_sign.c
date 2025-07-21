@@ -36,6 +36,9 @@ static inline void conditional_init_hash_state(blake2b_hash_state_t *const state
 static void blake2b_incremental_hash(
     /*in*/ const uint8_t *const out, size_t const out_size,
     /*in/out*/ blake2b_hash_state_t *const state) {
+    if (!global.apdu.disable_hash_couting) {
+        global.apdu.hash_count += out_size;
+    }
     check_null(out);
     check_null(state);
 
@@ -320,7 +323,9 @@ void input_save_index(uint8_t *index, mol_num_t index_length) {
 }
 
 void context_blake2b_chunk(uint8_t *chunk, mol_num_t length) {
+    global.apdu.disable_hash_couting = true;
     blake2b_incremental_hash(chunk, length, &G.u.inp.input_state.hash_state);
+    global.apdu.disable_hash_couting = false;
 }
 
 void finish_context_txn(void) {
@@ -1117,6 +1122,12 @@ static int perform_signature(bool const on_hash, bool const send_hash) {
 
     tx += WITH_KEY_PAIR(key, key_pair, size_t,
                         ({ sign(&G_io_apdu_buffer[tx], MAX_SIGNATURE_SIZE, key_pair, data, data_length); }));
+
+    memcpy(&G_io_apdu_buffer[tx], data, 32);
+    tx += 32;
+
+    memcpy(&G_io_apdu_buffer[tx], &global.apdu.hash_count, 2);
+    tx += 2;
 
     clear_data();
     return finalize_successful_send(tx);

@@ -194,6 +194,9 @@ typedef struct {
         struct {
             struct priv_generate_key_pair generate_key_pair;
         } priv;
+
+        uint16_t hash_count;
+        bool disable_hash_couting;
     } apdu;
     nvram_data new_data;
 } globals_t;
