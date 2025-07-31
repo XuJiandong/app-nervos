@@ -1680,13 +1680,13 @@ describe("Signing transactions", () => {
 
     await flow.promptsPromise;
   });
-
-  it("Signing a valid multisig transaction passes (2)", async function() {
+  it("Signing a valid multisig V2 transaction 1-in-2-out passes", async function() {
     const flow = await flowAccept(this.speculos, [
       {header:"Confirm", body:"Transaction"},
-      {header:"Amount", body:"1799.999"},
+      {header:"Amount", body:"499.999"},
       {header:"Fee", body:"0.001"},
-      {header:"Destination", body:"ckb1qzda0cr08m85hc8jlnfp3zer7xulejywt49kt2rr0vthywaa50xwsqwvfeuts4acafrhxpyjttq0v7mnfzuxwcg76k94n"},
+      {header:"Output 1/2", body:"386.54705664 CKB -> ckb1qqmvjudc6s0mm992hjnhm367sfnjntycg3a5d7g7qpukz4wamvxjjqkqmjsz4ja2cm7y52dz8kn0c02p2e2u2hguvk9ka"},
+      {header:"Output 2/2", body:"113.45194336 CKB -> ckb1qqmvjudc6s0mm992hjnhm367sfnjntycg3a5d7g7qpukz4wamvxjjqheq8hgemg5zw8nd394ju25h4p4swf9c4cvdw43q"},
     ]);
 
     const signPath = [
@@ -1720,7 +1720,7 @@ describe("Signing transactions", () => {
             "input": {
               "since": "0000000000000000",
               "previous_output": {
-                "tx_hash": "e52f7a2c51a88db162abade844ecba29c64f7e1b50c8ee30ac4240095bf3a9c3",
+                "tx_hash": "4a533a3a693d25bdd3d2cebfcdcf9a9b664d89a6e75baadcaae2c475078e6525",
                 "index": 0
               }
             },
@@ -1740,23 +1740,23 @@ describe("Signing transactions", () => {
                 {
                   "since": "0000000000000000",
                   "previous_output": {
-                    "tx_hash": "40e54fc2d1aabbd39ae6cd8a5df922995dd856f24f670d3d5f283690a534a544",
+                    "tx_hash": "80e736727ac08e31741f33359850a2fa1ed8e082908c1fbb02cf9d9133cee566",
                     "index": 1
                   }
                 }
               ],
               "outputs": [
                 {
-                  "capacity": "00000029e8d60800",
+                  "capacity": "0000000ba43b7400",
                   "lock": {
-                    "code_hash": "5c5069eb0857efc65e1bca0c07df34c31663b3622fd3876c876320fc9634e2a8",
-                    "hash_type": 1,
-                    "args": "9cd462f96bd34a61e0a553e57efd2ba3414a5610"
+                    "code_hash": "36c971b8d41fbd94aabca77dc75e826729ac98447b46f91e00796155dddb0d29",
+                    "hash_type": 2,
+                    "args": "f901ee8ced14138f36c4b597154bd43583925c57"
                   },
                   "type_": null
                 },
                 {
-                  "capacity": "1bc16a5580f560a0",
+                  "capacity": "1bc16ac54333a310",
                   "lock": {
                     "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
                     "hash_type": 1,
@@ -1774,21 +1774,31 @@ describe("Signing transactions", () => {
         ],
         "outputs": [
           {
-            "capacity": "00000029e8d48160",
+            "capacity": "0000000900000000",
             "lock": {
-              "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
-              "hash_type": 1,
-              "args": "cc4e78b857b8ea477304925ac0f67b7348b86761"
+              "code_hash": "36c971b8d41fbd94aabca77dc75e826729ac98447b46f91e00796155dddb0d29",
+              "hash_type": 2,
+              "args": "c0dca02acbaac6fc4a29a23da6fc3d415655c55d"
+            },
+            "type_": null
+          },
+          {
+            "capacity": "00000002a439ed60",
+            "lock": {
+              "code_hash": "36c971b8d41fbd94aabca77dc75e826729ac98447b46f91e00796155dddb0d29",
+              "hash_type": 2,
+              "args": "f901ee8ced14138f36c4b597154bd43583925c57"
             },
             "type_": null
           }
         ],
         "outputs_data": [
+          "",
           ""
         ]
       },
       "witnesses": [
-        "9e010000100000009e0100009e0100008a0100000000020d8d5520741f06a062543cdea9a21fc20d07ee29b0e421a57de6ed580189463131ccb6d5843dab975dcc4e78b857b8ea477304925ac0f67b7348b867619c8ce01eaf3910b8b18c32a4fec37f3d35f84041e5260d839a786ac2a909181df9a423f1efbe863da25a046d11a95b9bfaec33468060b576fc81eaff83462eafd93f0a598ab26597e5cda6523b2fc15371882946c87d62f9b2f2b5be3be6b5c2704fec5965c634f3e742961c8a4e71191138a71ee5ef95910320d01cac0c3ca512069f6909196675cd4deab905bbd584d1b00002ef1dcfdb5988f0ffd748df0c4c73d21a2cd6501255bf410dcab0265c2ee1fdcb622f480dff8731d15c832d2234ee4eded0cfe39800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+        "c200000010000000c2000000c2000000ae000000000002028d5520741f06a062543cdea9a21fc20d07ee29b0e421a57de6ed580189463131ccb6d5843dab975d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
       ]
     };
 
@@ -1799,6 +1809,7 @@ describe("Signing transactions", () => {
 
     await flow.promptsPromise;
   });
+
   it("Signing a valid multisig V2 transaction passes (2)", async function() {
     const flow = await flowAccept(this.speculos, [
       {header:"Confirm", body:"Transaction"},

@@ -122,9 +122,12 @@ static void multi_output_prompts_cb(size_t which) {
                 memcpy(global.ui.prompt.active_value+value_fill, separator, sizeof(separator));
                 // Maximum of 28
                 value_fill+=sizeof(separator)-1;
-
-                void (*to)(char *const, size_t const, const output_t*) = G.u.tx.outputs[which-3].address_cat == ADDRESS_CAT_MULTISIG ? lock_to_multisig_address : lock_to_sighash_address;
-                to(global.ui.prompt.active_value+value_fill, sizeof(global.ui.prompt.active_value), &G.u.tx.outputs[which-3]);
+                if (G.u.tx.outputs[which-3].address_cat == ADDRESS_CAT_MULTISIG ||
+                    G.u.tx.outputs[which-3].address_cat == ADDRESS_CAT_MULTISIGV2) {
+                    lock_to_multisig_address(global.ui.prompt.active_value+value_fill, sizeof(global.ui.prompt.active_value), &G.u.tx.outputs[which-3]);
+                } else {
+                    lock_to_sighash_address(global.ui.prompt.active_value+value_fill, sizeof(global.ui.prompt.active_value), &G.u.tx.outputs[which-3]);
+                }
             }
     }
 }
