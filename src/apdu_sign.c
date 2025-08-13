@@ -125,8 +125,12 @@ static void multi_output_prompts_cb(size_t which) {
                 if (G.u.tx.outputs[which-3].address_cat == ADDRESS_CAT_MULTISIG ||
                     G.u.tx.outputs[which-3].address_cat == ADDRESS_CAT_MULTISIGV2) {
                     lock_to_multisig_address(global.ui.prompt.active_value+value_fill, sizeof(global.ui.prompt.active_value), &G.u.tx.outputs[which-3]);
-                } else {
+                } else if (G.u.tx.outputs[which-3].address_cat == ADDRESS_CAT_DEFAULT) {
                     lock_to_sighash_address(global.ui.prompt.active_value+value_fill, sizeof(global.ui.prompt.active_value), &G.u.tx.outputs[which-3]);
+                } else if (G.u.tx.outputs[which-3].address_cat == ADDRESS_CAT_OTHERS) {
+                    other_lock_to_address(global.ui.prompt.active_value+value_fill, sizeof(global.ui.prompt.active_value), &G.u.tx.outputs[which-3]);
+                } else {
+                    THROW(EXC_REJECT);
                 }
             }
     }
@@ -137,20 +141,20 @@ static void multi_output_prompts_cb(size_t which) {
 static void sign_complete(uint8_t instruction) {
 
     ui_callback_t const ok_c = instruction == INS_SIGN_WITH_HASH ? sign_with_hash_ok : sign_without_hash_ok;
-    void *to_destination_address_cb = 0;
+    void *to_destination_address_cb = lock_to_sighash_address;
 
     if (G.u.tx.outputs[0].address_cat == ADDRESS_CAT_MULTISIG) {
         to_destination_address_cb = lock_to_multisig_address;
     } else if (G.u.tx.outputs[0].address_cat == ADDRESS_CAT_DEFAULT) {
         to_destination_address_cb = lock_to_sighash_address;
     } else if (G.u.tx.outputs[0].address_cat == ADDRESS_CAT_OTHERS) {
-        to_destination_address_cb = first_output_lock_to_address;
+        // When address category is OTHERS, it will be processed by OPERATION_TAG_MULTI_OUTPUT_TRANSFER
+        // and does not require any to_destination_address_cb
     } else if (G.u.tx.outputs[0].address_cat == ADDRESS_CAT_MULTISIGV2) {
         to_destination_address_cb = lock_to_multisig_address;
     } else {
         THROW(EXC_REJECT);
     }
-
     switch (G.maybe_transaction.v.tag) {
 
     case OPERATION_TAG_PLAIN_TRANSFER: {
@@ -394,20 +398,15 @@ void cell_lock_code_hash(uint8_t* buf, mol_num_t len) {
     } else if (!memcmp(buf, get_multisig_v2_code_hash(), 32)) {
         G.cell_state.address_cat = ADDRESS_CAT_MULTISIGV2;
     } else {
-        if (G.u.tx.current_output_index == 0) {
-            G.cell_state.address_cat = ADDRESS_CAT_OTHERS;
-            memcpy(G.first_output_lock.code_hash, buf, 32);
-        }
+        G.cell_state.address_cat = ADDRESS_CAT_OTHERS;
+        memcpy(G.cell_state.code_hash, buf, 32);
+        G.has_other_lock = true;
     }
 }
 
 void cell_script_hash_type(uint8_t hash_type) {
     if(!G.cell_state.active) return;
-    if (hash_type != 1) {
-        if (G.u.tx.current_output_index == 0) {
-            G.first_output_lock.hash_type = hash_type;
-        }
-    }
+    G.cell_state.hash_type = hash_type;
 }
 
 void script_arg_start_input() {
@@ -421,35 +420,24 @@ void script_arg_start_input() {
 void script_arg_chunk(uint8_t *buf, mol_num_t buflen) {
     if (!G.cell_state.active)
         return;
-    if (G.cell_state.address_cat == ADDRESS_CAT_OTHERS && G.u.tx.current_output_index == 0) {
-        uint32_t current_offset = G.cell_state.lock_arg_index;
-        if (G.cell_state.lock_arg_index + buflen > MAX_LOCK_ARGS_SIZE) {
-            REJECT("Script args is too long(> 40)");
-        }
-        memcpy(G.first_output_lock.args + current_offset, buf, buflen);
-        G.cell_state.lock_arg_index += buflen;
-        // update size
-        G.first_output_lock.args_size = G.cell_state.lock_arg_index;
-    } else {
-        uint32_t current_offset = G.cell_state.lock_arg_index;
-        if (G.cell_state.lock_arg_index + buflen > 28) { // Unknown arg
-            G.cell_state.lock_arg_nonequal |= true;
+    uint32_t current_offset = G.cell_state.lock_arg_index;
+    if (G.cell_state.lock_arg_index + buflen > 28) { // Unknown arg
+        G.cell_state.lock_arg_nonequal |= true;
+        return;
+    }
+
+    memcpy(((uint8_t *)&G.lock_arg_tmp) + current_offset, buf, buflen);
+    G.cell_state.lock_arg_index += buflen;
+
+    if (!G.lock_arg_cmp) {
+        G.cell_state.lock_arg_nonequal = true;
+        return;
+    }
+
+    for (mol_num_t i = 0; i < buflen; i++) {
+        G.cell_state.lock_arg_nonequal |= (G.lock_arg_cmp[current_offset + i] != buf[i]);
+        if (G.cell_state.lock_arg_nonequal)
             return;
-        }
-
-        memcpy(((uint8_t *)&G.lock_arg_tmp) + current_offset, buf, buflen);
-        G.cell_state.lock_arg_index += buflen;
-
-        if (!G.lock_arg_cmp) {
-            G.cell_state.lock_arg_nonequal = true;
-            return;
-        }
-
-        for (mol_num_t i = 0; i < buflen; i++) {
-            G.cell_state.lock_arg_nonequal |= (G.lock_arg_cmp[current_offset + i] != buf[i]);
-            if (G.cell_state.lock_arg_nonequal)
-                return;
-        }
     }
 }
 
@@ -618,18 +606,19 @@ void output_end(void) {
         G.maybe_transaction.v.flags |= HAS_CHANGE_ADDRESS;
     } else {
         // if the output lock arg doesn't match the change bip-32 path
-        if (G.cell_state.lock_arg_nonequal || G.cell_state.address_cat == ADDRESS_CAT_MULTISIG ||
+        if (G.has_other_lock || G.cell_state.lock_arg_nonequal || G.cell_state.address_cat == ADDRESS_CAT_MULTISIG ||
             G.cell_state.address_cat == ADDRESS_CAT_MULTISIGV2 || G.cell_state.address_cat == ADDRESS_CAT_OTHERS) {
             if (!(G.maybe_transaction.v.flags & HAS_DESTINATION_ADDRESS)) {
                 if (G.u.tx.output_count != 0) {
                     // Should be 0 if we haven't seent address yet
                     THROW(EXC_MEMORY_ERROR);
                 }
+                G.u.tx.outputs[0].args_size = G.cell_state.lock_arg_index;
                 G.u.tx.outputs[0].address_cat = G.cell_state.address_cat;
                 memcpy(&G.u.tx.outputs[0].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
                 G.u.tx.output_count++; // we found the first output
             } else if (memcmp(G.u.tx.outputs[G.u.tx.output_count - 1].destination.hash, G.lock_arg_tmp.hash, 20) ||
-                       G.u.tx.outputs[G.u.tx.output_count - 1].address_cat != G.cell_state.address_cat) {
+                       G.u.tx.outputs[G.u.tx.output_count - 1].address_cat != G.cell_state.address_cat || G.has_other_lock) {
                 // Not the same as last output, so cannot coalesce and need to
                 // make new prompt / cell in our output array.
                 if (G.maybe_transaction.v.tag != OPERATION_TAG_NOT_SET &&
@@ -642,6 +631,9 @@ void output_end(void) {
                     REJECT("Can't handle more than five outputs");
                 G.u.tx.outputs[G.u.tx.output_count].address_cat = G.cell_state.address_cat;
                 memcpy(&G.u.tx.outputs[G.u.tx.output_count].destination, &G.lock_arg_tmp, sizeof(lock_arg_t));
+                memcpy(&G.u.tx.outputs[G.u.tx.output_count].code_hash, G.cell_state.code_hash, 32);
+                G.u.tx.outputs[G.u.tx.output_count].hash_type = G.cell_state.hash_type;
+                G.u.tx.outputs[G.u.tx.output_count].args_size = G.cell_state.lock_arg_index;
                 G.u.tx.output_count++;
             } else {
                 // Same address as last output, can reuse promopt and so do

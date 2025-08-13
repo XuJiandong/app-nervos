@@ -172,6 +172,9 @@ typedef struct output_t {
 	uint64_t capacity;
 	lock_arg_t destination;
     uint8_t address_cat;
+    uint8_t code_hash[32];
+    uint8_t hash_type;
+    uint8_t args_size;
 } output_t;
 
 // Have we found an output cell which doesn't correspond to the change

@@ -743,10 +743,12 @@ describe("Signing transactions", () => {
   });
   it("Signing a valid transaction: send to non-genesis lock", async function() {
     const flow = await flowAccept(this.speculos, [
-      {header:"Confirm", body:"Transaction"},
-      {header:"Amount", body:"1400"},
-      {header:"Fee", body:"0.001"},
-      {header:"Destination", body:"ckb1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqfk9f54"},
+      { header: 'Confirm', body: 'Transaction' },
+      { header: 'Amount', body: '1499.999' },
+      { header: 'Fee', body: '0.001' },
+      { header: 'Output 1/3', body: '1400 CKB -> ckb1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq9q4d7f' },
+      { header: 'Output 2/3', body: '57.04932704 CKB -> ckb1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqquce06s' },
+      { header: 'Output 3/3', body: '42.94967296 CKB -> ckb1qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq4fqhl8' }
     ]);
 
     const signPath = [
@@ -842,21 +844,31 @@ describe("Signing transactions", () => {
             "lock": {
               "code_hash": "0000000000000000000000000000000000000000000000000000000000000000",
               "hash_type": 0,
-              "args": "00000000000000000000000000000000000000000000000000000000000000000000000000000000"
+              "args": "0000000000000000000000000000000000000000"
             },
             "type_": null
           },
           {
-            "capacity": "00000002540a5d60",
+            "capacity": "00000001540a5d60",
             "lock": {
-              "code_hash": "9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
-              "hash_type": 1,
-              "args": "622f480dff8731d15c832d2234ee4eded0cfe398"
+              "code_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "hash_type": 0,
+              "args": "000000000000000000000000000000000000000000"
+            },
+            "type_": null
+          },
+          {
+            "capacity": "0000000100000000",
+            "lock": {
+              "code_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+              "hash_type": 0,
+              "args": "00000000000000000000000000000000000000000000000000000000"
             },
             "type_": null
           }
         ],
         "outputs_data": [
+          "",
           "",
           ""
         ]

@@ -1,6 +1,7 @@
 #include "apdu.h"
 #include "globals.h"
 #include "to_string.h"
+#include "types.h"
 #include "version.h"
 #include "key_macros.h"
 #include "ux.h" // G_ux
@@ -143,7 +144,8 @@ void main_loop(apdu_handler const *const handlers, size_t const handlers_size) {
 
                 apdu_handler const cb = instruction >= handlers_size ? handle_apdu_error : handlers[instruction];
 
-                PRINTF("SIZOF1: %d SIZEOF2: %d\n", sizeof(G_ux), sizeof(G_ux_params));
+                PRINTF("SIZEOF1: %d SIZEOF2: %d\n", sizeof(G_ux), sizeof(G_ux_params));
+                PRINTF("SIZEOF global: %d, SIZEOF output_t: %d\n", sizeof(globals_t), sizeof(output_t));
                 PRINTF("Calling handler\n");
                 cb(instruction);
                 PRINTF("Normal return\n");

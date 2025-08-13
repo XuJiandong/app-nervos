@@ -236,12 +236,6 @@ void lock_to_sighash_address(char *const dest, size_t const buff_size, const out
     render_pkh(dest, buff_size, &render_address_payload, sizeof(render_address_payload.full_version));
 }
 
-void first_output_lock_to_address(char *const dest, size_t const buff_size, const void* args) {
-    (void)args;
-    const uint8_t* payload = ((uint8_t*)&G.first_output_lock) + 1;
-    size_t payload_size = 1 + 32 + 1 + G.first_output_lock.args_size;
-    render_pkh(dest, buff_size, (const render_address_payload_t*)payload, payload_size);
-}
 
 void lock_to_multisig_address(char *const dest, size_t const buff_size, const output_t* output) {
     render_address_payload_t render_address_payload;
@@ -285,6 +279,21 @@ void lock_to_multisig_address(char *const dest, size_t const buff_size, const ou
     render_pkh(dest, buff_size, &render_address_payload, payload_len);
 }
 
+
+void other_lock_to_address(char *const dest, size_t const buff_size, const output_t* output) {
+    render_address_payload_t render_address_payload;
+
+    render_address_payload.code_hash_data_or_type.address_format_type = ADDRESS_FORMAT_TYPE_FULL_VERSION;
+    memcpy(&render_address_payload.code_hash_data_or_type.code_hash, output->code_hash,
+            sizeof(render_address_payload.code_hash_data_or_type.code_hash));
+    render_address_payload.code_hash_data_or_type.hash_type = output->hash_type;
+    // we support up to 28 bytes args
+    memcpy(&render_address_payload.code_hash_data_or_type.lock_arg, (void*)&output->destination, output->args_size);
+
+    size_t delta_size = sizeof(lock_arg_t) - output->args_size;
+    size_t payload_len = sizeof(render_address_payload.code_hash_data_or_type) - delta_size;
+    render_pkh(dest, buff_size, &render_address_payload, payload_len);
+}
 
 // (x, h) -> "x of y"
 void uint64_tuple_to_string(char *const dest, size_t const buff_size, uint64_tuple_t const *const tuple) {

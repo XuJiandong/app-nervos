@@ -55,6 +55,8 @@ typedef struct {
     uint8_t is_dao : 1;
     uint8_t lock_arg_nonequal : 1;
     uint8_t address_cat : 4;
+    uint8_t hash_type;
+    uint8_t code_hash[32];
 } cell_state_t;
 
 typedef struct {
@@ -108,17 +110,6 @@ typedef struct {
     uint32_t distinct_input_sources; // distinct input lock_args
 
     cell_state_t cell_state;
-    // It is possible that we can send CKB to any address that in not default lock or multisig, e.g. omnilock, joyID, etc.
-    // Memory optimization: Only store the first output cell's lock script since it's the only one from payees
-    struct {
-        uint8_t args_size;
-        // the following data structure is exactly the same layout of payload:
-        // payload = 0x00 | code_hash | hash_type | args
-        uint8_t address_format_type;
-        uint8_t code_hash[32];
-        uint8_t hash_type;
-        uint8_t args[MAX_LOCK_ARGS_SIZE];
-    } first_output_lock;
 
     _Alignas(uint32_t) uint8_t transaction_stack[240];
     // struct AnnotatedTransaction_state transaction_stack; - not just replacing because the "headers" are badly formed.
@@ -133,6 +124,7 @@ typedef struct {
     uint8_t key_length;
 
     uint8_t signing_multisig_input;
+    uint8_t has_other_lock;
 } apdu_sign_state_t;
 
 typedef struct {
